@@ -36,7 +36,7 @@ class _HomePageState extends State<HomePage> {
                   final SharedPreferences prefs =
                       await SharedPreferences.getInstance();
 
-                  int count = prefs.getInt("count")!;
+                  int count = prefs.getInt("count") ?? 0;
                   List<ListTile> calHistory = [];
                   for (int i = 1; i < count; i++) {
                     calHistory.add(ListTile(
@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   Column(
                     children: [
-                      calculatorButton(buttonName:"X"),
+                      calculatorButton(icon: Icons.backspace),
                       calculatorButton(buttonName: "8"),
                       calculatorButton(buttonName: "5"),
                       calculatorButton(buttonName: "2"),
@@ -150,7 +150,8 @@ class _HomePageState extends State<HomePage> {
         if (displayValue_1.endsWith("+") ||
             displayValue_1.endsWith("-") ||
             displayValue_1.endsWith("*") ||
-            displayValue_1.endsWith("/")) {
+            displayValue_1.endsWith("/") ||
+            displayValue_1.endsWith("%")) {
           firstValue =
               num.parse(displayValue_1.substring(0, displayValue_1.length - 1));
 
@@ -183,6 +184,13 @@ class _HomePageState extends State<HomePage> {
 
             displayValue = result.toString();
           }
+          else if (operatorValue == "%") {
+            displayValue_1 = "$firstValue $operatorValue $secondValue =";
+
+            result = firstValue % secondValue;
+
+            displayValue = result.toString();
+          }
 
           saveData();
         }
@@ -207,7 +215,8 @@ class _HomePageState extends State<HomePage> {
           if (displayValue_1.endsWith("+") ||
               displayValue_1.endsWith("-") ||
               displayValue_1.endsWith("*") ||
-              displayValue_1.endsWith("/")) {
+              displayValue_1.endsWith("/") ||
+              displayValue_1.endsWith("%")) {
             if (operatorValue == "+") {
               result = firstValue + secondValue;
 
@@ -232,6 +241,12 @@ class _HomePageState extends State<HomePage> {
               displayValue = result.toString();
 
               displayValue_1 = "$result $buttonName";
+            } else if (operatorValue == "%") {
+              result = firstValue % secondValue;
+
+              displayValue = result.toString();
+
+              displayValue_1 = "$result $buttonName";
             }
 
             isReplace = false;
@@ -245,7 +260,8 @@ class _HomePageState extends State<HomePage> {
           if (displayValue_1.endsWith("+") ||
               displayValue_1.endsWith("-") ||
               displayValue_1.endsWith("*") ||
-              displayValue_1.endsWith("/")) {
+              displayValue_1.endsWith("/") ||
+              displayValue_1.endsWith("%")) {
             if (isReplace) {
               displayValue = displayValue + buttonName;
             } else {
@@ -265,10 +281,15 @@ class _HomePageState extends State<HomePage> {
           }
         }
       }
+
+      //press .
+      else if(buttonName == "."){
+        displayValue = displayValue + buttonName;
+      }
     });
   }
 
- Future<void> saveData() async {
+  Future<void> saveData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     int valueCount = 1;
 
@@ -283,15 +304,17 @@ class _HomePageState extends State<HomePage> {
     prefs.setString("val_$valueCount", "$displayValue_1 $displayValue");
   }
 
- Padding calculatorButton(
-      {required String buttonName,
-      bool isEquelButton = false,
-      bool isOperatorButton = false}) {
+  Padding calculatorButton(
+      {String? buttonName, IconData? icon, bool isEquelButton = false, bool isOperatorButton = false}) {
     return Padding(
       padding: const EdgeInsets.all(5),
       child: InkWell(
         onTap: () {
+          if (buttonName != null) {
           calculationProcess(buttonName: buttonName);
+        } else if (icon == Icons.backspace) {
+          calculationProcess(buttonName: "X"); // Keep the same logic for backspace
+        }
         },
         child: Container(
           width: 65,
@@ -302,8 +325,10 @@ class _HomePageState extends State<HomePage> {
                   : const Color(0xff313538),
               borderRadius: BorderRadius.circular(50)),
           child: Center(
-              child: Text(
-            buttonName,
+               child: icon != null
+                ? Icon(icon, color: Colors.white, size: 20)
+                : Text(
+              buttonName ?? "",
             style: const TextStyle(color: Colors.white, fontSize: 20),
           )),
         ),
